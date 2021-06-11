@@ -111,5 +111,6 @@ let main argv ppf =
     Location.report_exception ppf x;
     2
   | () ->
-    Profile.print Format.std_formatter !Clflags.profile_columns ~timings_precision:!Clflags.timings_precision;
+    Compmisc.with_ppf_dump ~file_prefix:"profile"
+      (fun ppf -> Profile.print ppf !Clflags.profile_columns ~timings_precision:!Clflags.timings_precision);
     0

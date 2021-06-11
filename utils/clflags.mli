@@ -202,6 +202,7 @@ val dumped_pass : string -> bool
 val set_dumped_pass : string -> bool -> unit
 
 val dump_into_file : bool ref
+val dump_dir : string option ref
 
 module Extension : sig
   type t = Comprehensions | Local | Include_functor
