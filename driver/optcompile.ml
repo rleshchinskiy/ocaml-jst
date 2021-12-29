@@ -104,7 +104,7 @@ let implementation ~backend ~start_from ~source_file
     else clambda info backend typed
   in
   with_info ~source_file ~output_prefix ~dump_ext:"cmx" @@ fun info ->
-  match (start_from:Clflags.Compiler_pass.t) with
+  (match (start_from:Clflags.Compiler_pass.t) with
   | Parsing ->
     Compile_common.implementation
       ~hook_parse_tree:(fun _ -> ())
@@ -112,4 +112,8 @@ let implementation ~backend ~start_from ~source_file
       info ~backend
   | Emit -> emit info
   | _ -> Misc.fatal_errorf "Cannot start from %s"
-           (Clflags.Compiler_pass.to_string start_from)
+           (Clflags.Compiler_pass.to_string start_from));
+  let file_prefix = info.output_prefix ^ ".cmx.profile" in
+  Compmisc.with_ppf_dump ~file_prefix @@ fun ppf ->
+  Profile.print ppf !Clflags.profile_columns ~timings_precision:!Clflags.timings_precision;
+  Profile.reset ()
