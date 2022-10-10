@@ -1959,6 +1959,19 @@ let wrap_constraint env mark arg mty explicit =
 
 (* Type a module value expression *)
 
+let shortcut_strengthening env mty_param sarg = match mty_param, sarg.pmod_desc with
+  | Mty_ident param_path, Pmod_ident lid ->
+    let sarg_path = Env.lookup_module_path ~load:true ~loc:sarg.pmod_loc lid.txt env in
+    let arg_ty = (Env.find_module sarg_path env).md_type in
+    begin match arg_ty with
+    | Mty_ident arg_path ->
+      let param_path = Env.normalize_modtype_path env param_path in
+      let arg_path = Env.normalize_modtype_path env arg_path in
+      Path.same param_path arg_path
+    | _ -> false
+      end
+  | _ -> false
+
 let rec type_module ?(alias=false) sttn funct_body anchor env smod =
   Builtin_attributes.warning_scope smod.pmod_attributes
     (fun () -> type_module_aux ~alias sttn funct_body anchor env smod)
@@ -2061,12 +2074,15 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
             mod_attributes = smod.pmod_attributes;
             mod_loc = smod.pmod_loc }
       | Mty_functor (Named (param, mty_param), mty_res) as mty_functor ->
-          let coercion =
-            try
-              Includemod.modtypes ~loc:sarg.pmod_loc ~mark:Mark_both env
-                arg.mod_type mty_param
-            with Includemod.Error msg ->
-              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
+        let coercion =
+          if shortcut_strengthening env mty_param sarg
+          then Tcoerce_none
+          else
+              try
+                Includemod.modtypes ~loc:sarg.pmod_loc ~mark:Mark_both env
+                  arg.mod_type mty_param
+              with Includemod.Error msg ->
+                raise(Error(sarg.pmod_loc, env, Not_included msg)) in
           let mty_appl =
             match path with
             | Some path ->
