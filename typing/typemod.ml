@@ -1959,10 +1959,9 @@ let wrap_constraint env mark arg mty explicit =
 
 (* Type a module value expression *)
 
-let shortcut_strengthening env mty_param sarg = match mty_param, sarg.pmod_desc with
-  | Mty_ident param_path, Pmod_ident lid ->
-    let sarg_path = Env.lookup_module_path ~load:true ~loc:sarg.pmod_loc lid.txt env in
-    let arg_ty = (Env.find_module sarg_path env).md_type in
+let shortcut_strengthening env mty_param arg = match mty_param, arg.mod_desc with
+  | Mty_ident param_path, Tmod_ident (arg_path,_) ->
+    let arg_ty = (Env.find_module arg_path env).md_type in
     begin match arg_ty with
     | Mty_ident arg_path ->
       let param_path = Env.normalize_modtype_path env param_path in
@@ -2075,7 +2074,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
             mod_loc = smod.pmod_loc }
       | Mty_functor (Named (param, mty_param), mty_res) as mty_functor ->
         let coercion =
-          if shortcut_strengthening env mty_param sarg
+          if shortcut_strengthening env mty_param arg
           then Tcoerce_none
           else
               try
